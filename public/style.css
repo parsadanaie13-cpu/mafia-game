@@ -1,0 +1,789 @@
+/* ============================================================================
+   MAFIA ONLINE - style.css
+   تم: نوآر شب‌زده (dark noir) - پس‌زمینه‌ی تیره، لهجه‌ی قرمز خون برای مافیا،
+   طلایی گرم برای هاست/برجستگی، سبز ملایم برای تیم شهروند.
+   ============================================================================ */
+
+:root {
+  /* پالت رنگ */
+  --bg-base: #0d0f14;
+  --bg-panel: #161923;
+  --bg-panel-raised: #1e2230;
+  --bg-input: #11131b;
+  --border-subtle: #2a2f40;
+  --text-primary: #e6e8ef;
+  --text-secondary: #9aa0b4;
+  --text-muted: #6b7186;
+
+  --accent-blood: #b3283d;
+  --accent-blood-bright: #e0364f;
+  --accent-gold: #c9a24b;
+  --accent-gold-bright: #e0bd6d;
+  --accent-citizen: #4e8f6c;
+  --accent-info: #4b7fc9;
+
+  --phase-night: #2b2f6b;
+  --phase-day: #b3812f;
+  --phase-voting: #8c2b3c;
+  --phase-results: #4b4b8c;
+  --phase-lobby: #33384a;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --font-display: 'Vazirmatn', 'Tahoma', sans-serif;
+  --font-body: 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: radial-gradient(ellipse at top, #171b26 0%, var(--bg-base) 60%);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  direction: rtl;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 56px; /* جا برای فوتر ثابت */
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+p {
+  margin: 0 0 8px;
+  line-height: 1.8;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   وضعیت اتصال
+--------------------------------------------------------------------------- */
+.connection-status {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--bg-panel-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: background 0.3s ease;
+}
+.connection-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.connection-status[data-state='connected'] .dot {
+  background: var(--accent-citizen);
+}
+.connection-status[data-state='connecting'] .dot {
+  background: var(--accent-gold);
+  animation: pulse 1.2s infinite;
+}
+.connection-status[data-state='disconnected'] .dot {
+  background: var(--accent-blood-bright);
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ---------------------------------------------------------------------------
+   Toast
+--------------------------------------------------------------------------- */
+.toast-container {
+  position: fixed;
+  bottom: 64px;
+  inset-inline: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-subtle);
+  border-inline-start: 4px solid var(--accent-info);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  max-width: 90vw;
+  animation: toast-in 0.25s ease;
+}
+.toast[data-kind='error'] {
+  border-inline-start-color: var(--accent-blood-bright);
+}
+.toast[data-kind='success'] {
+  border-inline-start-color: var(--accent-citizen);
+}
+@keyframes toast-in {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------------
+   Layout عمومی
+--------------------------------------------------------------------------- */
+.view {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 16px 24px;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+}
+.panel-title {
+  font-size: 15px;
+  color: var(--accent-gold-bright);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   دکمه‌ها
+--------------------------------------------------------------------------- */
+.btn {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+  color: var(--text-primary);
+}
+.btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-block {
+  display: block;
+  width: 100%;
+}
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.btn-icon {
+  padding: 8px;
+  border-radius: 50%;
+  line-height: 1;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-blood-bright), var(--accent-blood));
+}
+.btn-secondary {
+  background: linear-gradient(135deg, #3a4160, #262a3c);
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold-bright);
+}
+
+/* ---------------------------------------------------------------------------
+   صفحه ورود
+--------------------------------------------------------------------------- */
+.view-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+}
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-card);
+}
+.brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.brand-mark {
+  font-size: 40px;
+}
+.brand h1 {
+  font-size: 28px;
+  margin-top: 8px;
+}
+.brand-accent {
+  color: var(--accent-blood-bright);
+}
+.brand-tag {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.field {
+  display: block;
+  margin-bottom: 16px;
+}
+.field-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.field-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+input[type='text'],
+input[type='number'],
+select {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+input[type='text']:focus,
+input[type='number']:focus,
+select:focus {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+.form-error {
+  color: var(--accent-blood-bright);
+  font-size: 13px;
+  min-height: 18px;
+  margin-top: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   لابی
+--------------------------------------------------------------------------- */
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.lobby-header-actions {
+  display: flex;
+  gap: 8px;
+}
+.lobby-room-name {
+  font-size: 24px;
+}
+.lobby-player-count {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.rules-hint {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.rules-hint summary {
+  cursor: pointer;
+  color: var(--accent-gold-bright);
+  font-weight: 600;
+}
+.rules-list {
+  margin-top: 8px;
+  padding-inline-start: 18px;
+  list-style: disc;
+}
+.rules-list li {
+  margin-bottom: 4px;
+}
+
+.lobby-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 720px) {
+  .lobby-grid,
+  .game-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.ready-block {
+  margin-bottom: 16px;
+}
+.hint-text {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.roles-config {
+  background: var(--bg-panel-raised);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.roles-config-title {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.roles-config-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.role-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.roles-config-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.roles-config-total {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   لیست بازیکنان
+--------------------------------------------------------------------------- */
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-panel-raised);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.player-item[data-speaking='true'] {
+  border-color: var(--accent-citizen);
+  box-shadow: 0 0 0 2px rgba(78, 143, 108, 0.25);
+}
+.player-item[data-alive='false'] {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.player-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-citizen);
+  flex-shrink: 0;
+}
+.player-item[data-connected='false'] .player-status-dot {
+  background: var(--text-muted);
+}
+.player-name {
+  flex: 1;
+  font-weight: 600;
+}
+.player-badges {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.badge {
+  background: var(--bg-input);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.badge-host {
+  color: var(--accent-gold-bright);
+}
+.badge-ready {
+  color: var(--accent-citizen);
+}
+.badge-muted {
+  color: var(--accent-blood-bright);
+}
+
+/* ---------------------------------------------------------------------------
+   ویس
+--------------------------------------------------------------------------- */
+.voice-bar {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.voice-bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.voice-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.mic-select {
+  max-width: 180px;
+  font-size: 12px;
+  padding: 6px;
+}
+.voice-legend {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-inline-start: 10px;
+}
+.legend-dot:first-child {
+  margin-inline-start: 0;
+}
+.legend-speaking {
+  background: var(--accent-citizen);
+}
+.legend-muted {
+  background: var(--accent-blood-bright);
+}
+.audio-container {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   لاگ سیستم
+--------------------------------------------------------------------------- */
+.log-panel {
+  max-height: 220px;
+  overflow: hidden;
+}
+.system-log {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+.log-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 8px;
+}
+.log-time {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   صفحه بازی
+--------------------------------------------------------------------------- */
+.phase-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  background: var(--phase-lobby);
+  box-shadow: var(--shadow-card);
+  transition: background 0.4s ease;
+}
+.phase-banner[data-phase='night'] { background: linear-gradient(135deg, var(--phase-night), #1a1c40); }
+.phase-banner[data-phase='role_reveal'] { background: linear-gradient(135deg, var(--phase-night), #33285f); }
+.phase-banner[data-phase='day'] { background: linear-gradient(135deg, var(--phase-day), #7a5a1f); }
+.phase-banner[data-phase='voting'] { background: linear-gradient(135deg, var(--phase-voting), #5c1c28); }
+.phase-banner[data-phase='defense'] { background: linear-gradient(135deg, #6b2440, #3a1226); }
+.phase-banner[data-phase='results'] { background: linear-gradient(135deg, var(--phase-results), #34345f); }
+.phase-banner[data-phase='ended'] { background: linear-gradient(135deg, var(--accent-gold), #7a5a1f); }
+.phase-label {
+  font-size: 20px;
+  font-weight: 800;
+}
+.phase-day {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 260px;
+  gap: 16px;
+  align-items: start;
+}
+
+.phase-content {
+  animation: fade-in 0.25s ease;
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.role-flavor {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.night-role-panel {
+  margin-top: 12px;
+}
+.mafia-teammates {
+  font-size: 12px;
+  color: var(--accent-blood-bright);
+}
+.detective-result {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel-raised);
+  font-size: 13px;
+}
+
+.target-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.target-btn {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.target-btn:hover {
+  border-color: var(--accent-gold);
+}
+.target-btn[data-selected='true'] {
+  background: var(--accent-blood);
+  border-color: var(--accent-blood-bright);
+}
+.target-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vote-tally {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.vote-tally-row {
+  display: flex;
+  justify-content: space-between;
+  background: var(--bg-panel-raised);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   مودال‌ها
+--------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  padding: 16px;
+}
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+.role-reveal-eyebrow {
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.role-reveal-name {
+  font-size: 30px;
+  color: var(--accent-gold-bright);
+  margin-bottom: 4px;
+}
+.role-reveal-team {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.role-reveal-desc {
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.game-over-winner {
+  font-size: 26px;
+  color: var(--accent-gold-bright);
+}
+.game-over-reason {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.roles-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+.roles-table th,
+.roles-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: center;
+}
+.roles-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.game-over-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   فوتر
+--------------------------------------------------------------------------- */
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-panel-raised);
+  border-top: 1px solid var(--border-subtle);
+}
+.app-footer-sep {
+  opacity: 0.5;
+}
+
+.noscript-warning {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--bg-base);
+  color: var(--accent-blood-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .roles-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   دفاعیه
+--------------------------------------------------------------------------- */
+.defense-countdown {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent-gold-bright);
+  text-align: center;
+  margin: 12px 0;
+}
