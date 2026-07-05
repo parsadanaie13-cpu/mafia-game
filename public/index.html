@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  MAFIA ONLINE - index.html
+  ============================================================================
+  ساختار کامل صفحه‌ی بازی مافیای آنلاین.
+  همه‌ی idهای موجود در این فایل دقیقاً با querySelector هایی که در client.js
+  استفاده می‌شوند مطابقت دارند. اگر idای اینجا تغییر کند، باید همزمان در
+  client.js هم اصلاح شود تا mismatch ایجاد نشود.
+
+  فازهای بازی که این صفحه پوشش می‌دهد:
+    لابی -> نمایش نقش -> شب -> روز -> رأی‌گیری -> پایان بازی
+
+  ----------------------------------------------------------------------------
+  نقشه‌ی idهای کلیدی (ID Map) - مرجع سریع برای client.js
+  ----------------------------------------------------------------------------
+  این فهرست صرفاً مستندسازی است؛ منبع حقیقت خود idهای داخل HTML هستند.
+
+  عمومی:
+    connection-status, connection-status-text, toast-container
+
+  ورود (Login):
+    view-login, login-form, input-username, input-roomname, btn-join, login-error
+
+  لابی (Lobby):
+    view-lobby, lobby-room-name, lobby-player-count, btn-copy-room,
+    btn-leave-lobby, lobby-player-list, btn-toggle-ready, lobby-ready-hint,
+    lobby-roles-config, role-count-mafia, role-count-doctor,
+    role-count-detective, role-count-citizen, btn-auto-roles, btn-save-roles,
+    roles-config-total, btn-start-game, lobby-start-error, lobby-system-log
+
+  بازی (Game):
+    view-game, game-phase-banner, game-phase-label, game-phase-day,
+    game-player-list, game-system-log
+
+  فاز شب:
+    panel-night, night-mafia-panel, night-mafia-role-flavor, night-mafia-teammates,
+    night-mafia-targets, night-doctor-panel, night-doctor-targets,
+    night-detective-panel, night-detective-targets, detective-result-display,
+    night-saqi-panel, night-saqi-targets, night-natasha-panel, night-natasha-targets,
+    night-sniper-panel, sniper-bullets-remaining, night-sniper-targets,
+    night-citizen-panel, night-action-status, btn-force-resolve-night
+
+  فاز روز:
+    panel-day, day-message, day-silenced-notice, btn-advance-voting
+
+  فاز رأی‌گیری:
+    panel-voting, voting-candidate-list, voting-tally-display, vote-error,
+    btn-end-voting
+
+  فاز دفاعیه:
+    panel-defense, defense-message, defense-countdown, defense-mic-notice,
+    btn-end-defense
+
+  فاز نتیجه:
+    panel-results, results-message
+
+  مودال نقش خصوصی:
+    modal-role-reveal, role-reveal-name, role-reveal-team, role-reveal-desc,
+    btn-ack-role
+
+  مودال پایان بازی:
+    modal-game-over, game-over-winner, game-over-reason,
+    game-over-roles-body, btn-play-again, btn-leave-after-game
+
+  ویس (هم در لابی هم در بازی، دو ست جدا از دکمه‌ها با پسوند -ingame):
+    btn-voice-join / btn-voice-join-ingame
+    btn-voice-leave / btn-voice-leave-ingame
+    btn-mic-toggle / btn-mic-toggle-ingame
+    voice-status / voice-status-ingame
+    mic-device-select, voice-permission-error, audio-container
+
+  تمپلیت‌ها:
+    tpl-player-item, tpl-target-button, tpl-log-item
+  ----------------------------------------------------------------------------
+  ============================================================================
+-->
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>مافیا آنلاین | بازی با دوستان</title>
+  <meta name="description" content="بازی آنلاین مافیا با اتاق خصوصی، ویس زنده و نقش‌های اختصاصی" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="/style.css" />
+  <meta name="theme-color" content="#0d0f14" />
+  <meta name="color-scheme" content="dark" />
+</head>
+<body>
+  <noscript>
+    <div class="noscript-warning">
+      این بازی نیازمند JavaScript فعال در مرورگر شماست. لطفاً JavaScript را فعال کنید.
+    </div>
+  </noscript>
+  <!-- ==================================================================
+       نوار وضعیت اتصال (بالای صفحه) - همیشه قابل مشاهده است
+  =================================================================== -->
+  <div id="connection-status" class="connection-status" data-state="connecting">
+    <span class="dot"></span>
+    <span id="connection-status-text">در حال اتصال به سرور...</span>
+  </div>
+
+  <!-- ==================================================================
+       ناحیه‌ی Toast برای پیام‌های خطا / موفقیت لحظه‌ای
+  =================================================================== -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ==================================================================
+       VIEW 1: صفحه‌ی ورود (login) - نام بازیکن + نام اتاق
+  =================================================================== -->
+  <main id="view-login" class="view view-login">
+    <div class="login-card">
+      <div class="brand">
+        <span class="brand-mark">🕵️</span>
+        <h1>مافیا <span class="brand-accent">آنلاین</span></h1>
+        <p class="brand-tag">بازی خصوصی با دوستان، با ویس زنده</p>
+      </div>
+
+      <form id="login-form" class="login-form" autocomplete="off">
+        <label class="field">
+          <span class="field-label">نام بازیکن</span>
+          <input
+            id="input-username"
+            name="username"
+            type="text"
+            maxlength="20"
+            placeholder="مثلاً: علی"
+            required
+          />
+        </label>
+
+        <label class="field">
+          <span class="field-label">نام اتاق</span>
+          <input
+            id="input-roomname"
+            name="roomname"
+            type="text"
+            maxlength="30"
+            placeholder="مثلاً: میز-دوستان"
+            required
+          />
+          <span class="field-hint">اگر این اتاق وجود داشته باشد به آن می‌پیوندید، در غیر این صورت ساخته می‌شود.</span>
+        </label>
+
+        <button id="btn-join" type="submit" class="btn btn-primary btn-block">
+          ورود به اتاق
+        </button>
+
+        <p id="login-error" class="form-error" role="alert"></p>
+      </form>
+    </div>
+  </main>
+
+  <!-- ==================================================================
+       VIEW 2: لابی اتاق (پیش از شروع بازی)
+  =================================================================== -->
+  <main id="view-lobby" class="view view-lobby hidden">
+    <header class="lobby-header">
+      <div>
+        <h2 id="lobby-room-name" class="lobby-room-name">—</h2>
+        <p id="lobby-player-count" class="lobby-player-count">۰ بازیکن</p>
+      </div>
+      <div class="lobby-header-actions">
+        <button id="btn-copy-room" class="btn btn-ghost btn-small" type="button">
+          کپی نام اتاق برای دعوت
+        </button>
+        <button id="btn-leave-lobby" class="btn btn-ghost btn-small">خروج از اتاق</button>
+      </div>
+    </header>
+
+    <!-- راهنمای سریع بازی - صرفاً محتوای ایستا، بدون وابستگی به سرور -->
+    <details class="rules-hint">
+      <summary>راهنمای سریع بازی مافیا</summary>
+      <ul class="rules-list">
+        <li>هر شب، مافیا یک نفر را برای حذف انتخاب می‌کند.</li>
+        <li>دکتر می‌تواند هر شب یک نفر (حتی خودش) را نجات دهد.</li>
+        <li>کارآگاه می‌تواند هر شب تیم یک نفر را استعلام بگیرد.</li>
+        <li>در روز، همه با هم گفت‌وگو و سپس رأی‌گیری می‌کنند.</li>
+        <li>اگر همه‌ی مافیاها حذف شوند، شهروندان برنده‌اند.</li>
+        <li>اگر تعداد مافیا برابر یا بیشتر از شهروندان شود، مافیا برنده است.</li>
+      </ul>
+    </details>
+
+    <div class="lobby-grid">
+      <!-- ستون راست: لیست بازیکنان -->
+      <section class="panel">
+        <h3 class="panel-title">بازیکنان حاضر</h3>
+        <ul id="lobby-player-list" class="player-list"></ul>
+      </section>
+
+      <!-- ستون چپ: کنترل‌های آماده‌سازی و شروع -->
+      <section class="panel">
+        <h3 class="panel-title">آماده‌سازی بازی</h3>
+
+        <div id="lobby-ready-block" class="ready-block">
+          <button id="btn-toggle-ready" class="btn btn-secondary btn-block">
+            آماده‌ام
+          </button>
+          <p id="lobby-ready-hint" class="hint-text hidden">
+            شما هاست هستید و همیشه آماده محسوب می‌شوید.
+          </p>
+        </div>
+
+        <!-- تنظیمات نقش‌ها - فقط برای هاست نمایش داده می‌شود -->
+        <div id="lobby-roles-config" class="roles-config hidden">
+          <h4 class="roles-config-title">تعداد نقش‌ها</h4>
+          <div class="roles-config-grid">
+            <label class="role-input">
+              <span>رئیس مافیا</span>
+              <input id="role-count-mafia-boss" type="number" min="0" max="1" value="0" />
+            </label>
+            <label class="role-input">
+              <span>مافیای ساده</span>
+              <input id="role-count-mafia" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>دکتر لکتر</span>
+              <input id="role-count-doctor-lecter" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>دکتر</span>
+              <input id="role-count-doctor" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>کارآگاه</span>
+              <input id="role-count-detective" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>ساقی</span>
+              <input id="role-count-saqi" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>ناتاشا</span>
+              <input id="role-count-natasha" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>تک‌تیرانداز</span>
+              <input id="role-count-sniper" type="number" min="0" max="20" value="0" />
+            </label>
+            <label class="role-input">
+              <span>شهروند</span>
+              <input id="role-count-citizen" type="number" min="0" max="20" value="0" />
+            </label>
+          </div>
+          <div class="roles-config-actions">
+            <button id="btn-auto-roles" type="button" class="btn btn-ghost btn-small">
+              پیشنهاد خودکار
+            </button>
+            <button id="btn-save-roles" type="button" class="btn btn-ghost btn-small">
+              ذخیره‌ی تنظیمات
+            </button>
+          </div>
+          <p id="roles-config-total" class="roles-config-total"></p>
+        </div>
+
+        <button id="btn-start-game" class="btn btn-primary btn-block hidden">
+          شروع بازی
+        </button>
+        <p id="lobby-start-error" class="form-error" role="alert"></p>
+      </section>
+    </div>
+
+    <!-- ==================================================================
+         نوار ویس - در لابی هم فعال است تا دوستان زودتر صحبت کنند
+    =================================================================== -->
+    <section id="voice-bar" class="voice-bar">
+      <div class="voice-bar-controls">
+        <button id="btn-voice-join" class="btn btn-secondary btn-small">
+          ورود به ویس 🎙️
+        </button>
+        <button id="btn-voice-leave" class="btn btn-ghost btn-small hidden">
+          خروج از ویس
+        </button>
+        <button id="btn-mic-toggle" class="btn btn-icon hidden" aria-label="قطع/وصل میکروفون">
+          🎤
+        </button>
+        <select id="mic-device-select" class="mic-select hidden" aria-label="انتخاب میکروفون"></select>
+        <span id="voice-status" class="voice-status">ویس غیرفعال</span>
+      </div>
+      <p id="voice-permission-error" class="form-error hidden" role="alert"></p>
+      <div id="audio-container" class="audio-container" aria-hidden="true"></div>
+    </section>
+
+    <section class="panel log-panel">
+      <h3 class="panel-title">رویدادهای اتاق</h3>
+      <ul id="lobby-system-log" class="system-log"></ul>
+    </section>
+  </main>
+
+  <!-- ==================================================================
+       VIEW 3: صفحه‌ی اصلی بازی (نمایش نقش / شب / روز / رأی‌گیری / پایان)
+  =================================================================== -->
+  <main id="view-game" class="view view-game hidden">
+    <header id="game-phase-banner" class="phase-banner" data-phase="lobby">
+      <span id="game-phase-label" class="phase-label">—</span>
+      <span id="game-phase-day" class="phase-day"></span>
+    </header>
+
+    <div class="game-grid">
+      <!-- ستون راست: لیست بازیکنان زنده/حذف‌شده -->
+      <aside class="panel player-panel">
+        <h3 class="panel-title">بازیکنان</h3>
+        <ul id="game-player-list" class="player-list"></ul>
+
+        <div class="voice-bar voice-bar-ingame">
+          <div class="voice-bar-controls">
+            <button id="btn-voice-join-ingame" class="btn btn-secondary btn-small">
+              ورود به ویس 🎙️
+            </button>
+            <button id="btn-voice-leave-ingame" class="btn btn-ghost btn-small hidden">
+              خروج از ویس
+            </button>
+            <button id="btn-mic-toggle-ingame" class="btn btn-icon hidden" aria-label="قطع/وصل میکروفون">
+              🎤
+            </button>
+            <span id="voice-status-ingame" class="voice-status">ویس غیرفعال</span>
+          </div>
+          <p class="voice-legend">
+            <span class="legend-dot legend-speaking"></span> در حال صحبت
+            <span class="legend-dot legend-muted"></span> میکروفون قطع
+          </p>
+        </div>
+      </aside>
+
+      <!-- ستون میانی: پنل مخصوص فاز جاری -->
+      <section class="panel phase-panel">
+        <!-- فاز شب -->
+        <div id="panel-night" class="phase-content hidden">
+          <h3 class="panel-title">🌙 فاز شب</h3>
+
+          <!-- پنل مشترک تیم مافیا: رئیس مافیا / مافیای ساده / دکتر لکتر -->
+          <div id="night-mafia-panel" class="night-role-panel hidden">
+            <p id="night-mafia-role-flavor" class="role-flavor"></p>
+            <p id="night-mafia-teammates" class="mafia-teammates"></p>
+            <div id="night-mafia-targets" class="target-grid"></div>
+          </div>
+
+          <div id="night-doctor-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما دکتر هستید. یک نفر را برای نجات امشب انتخاب کنید.</p>
+            <div id="night-doctor-targets" class="target-grid"></div>
+          </div>
+
+          <div id="night-detective-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما کارآگاه هستید. یک نفر را برای استعلام انتخاب کنید.</p>
+            <div id="night-detective-targets" class="target-grid"></div>
+            <div id="detective-result-display" class="detective-result hidden"></div>
+          </div>
+
+          <div id="night-saqi-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما ساقی هستید. یک نفر را برای مست‌کردن انتخاب کنید (اکشن شبانه‌ی او اجرا نمی‌شود).</p>
+            <div id="night-saqi-targets" class="target-grid"></div>
+          </div>
+
+          <div id="night-natasha-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما ناتاشا هستید. یک نفر را برای سایلنت‌کردن انتخاب کنید (فردا نمی‌تواند صحبت کند).</p>
+            <div id="night-natasha-targets" class="target-grid"></div>
+          </div>
+
+          <div id="night-sniper-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما تک‌تیرانداز هستید. اگر به مافیا شلیک کنید حذفش می‌کنید؛ اگر اشتباه بزنید خودتان حذف می‌شوید.</p>
+            <p id="sniper-bullets-remaining" class="hint-text"></p>
+            <div id="night-sniper-targets" class="target-grid"></div>
+          </div>
+
+          <div id="night-citizen-panel" class="night-role-panel hidden">
+            <p class="role-flavor">شما شهروند هستید و اکشن شبانه ندارید. منتظر بمانید تا شب تمام شود.</p>
+          </div>
+
+          <p id="night-action-status" class="hint-text"></p>
+          <button id="btn-force-resolve-night" class="btn btn-ghost btn-small hidden">
+            پایان زودهنگام شب (هاست)
+          </button>
+        </div>
+
+        <!-- فاز روز -->
+        <div id="panel-day" class="phase-content hidden">
+          <h3 class="panel-title">☀️ فاز روز</h3>
+          <p id="day-message" class="role-flavor">
+            درباره‌ی رویدادهای دیشب با بقیه صحبت کنید و مشکوکین را بررسی کنید.
+          </p>
+          <p id="day-silenced-notice" class="form-error hidden"></p>
+          <button id="btn-advance-voting" class="btn btn-primary btn-block hidden">
+            شروع رأی‌گیری (هاست)
+          </button>
+        </div>
+
+        <!-- فاز رأی‌گیری -->
+        <div id="panel-voting" class="phase-content hidden">
+          <h3 class="panel-title">🗳️ رأی‌گیری</h3>
+          <p class="role-flavor">به فردی که فکر می‌کنید مافیاست رأی دهید (یا رأی سفید بدهید).</p>
+          <div id="voting-candidate-list" class="target-grid"></div>
+          <div id="voting-tally-display" class="vote-tally"></div>
+          <p id="vote-error" class="form-error" role="alert"></p>
+          <button id="btn-end-voting" class="btn btn-ghost btn-small hidden">
+            پایان زودهنگام رأی‌گیری (هاست)
+          </button>
+        </div>
+
+        <!-- فاز دفاعیه: ۷۵ ثانیه، فقط متهم صحبت می‌کند -->
+        <div id="panel-defense" class="phase-content hidden">
+          <h3 class="panel-title">⚖️ دفاعیه</h3>
+          <p id="defense-message" class="role-flavor"></p>
+          <p id="defense-countdown" class="defense-countdown"></p>
+          <p id="defense-mic-notice" class="hint-text"></p>
+          <button id="btn-end-defense" class="btn btn-ghost btn-small hidden">
+            پایان زودهنگام دفاعیه (هاست)
+          </button>
+        </div>
+
+        <!-- فاز نمایش نتیجه (بین شب/رأی‌گیری و فاز بعدی) -->
+        <div id="panel-results" class="phase-content hidden">
+          <h3 class="panel-title">📜 نتیجه</h3>
+          <p id="results-message" class="role-flavor"></p>
+        </div>
+      </section>
+
+
+      <!-- ستون چپ: لاگ رویدادهای بازی -->
+      <aside class="panel log-panel">
+        <h3 class="panel-title">رویدادهای بازی</h3>
+        <ul id="game-system-log" class="system-log"></ul>
+      </aside>
+    </div>
+  </main>
+
+  <!-- ==================================================================
+       MODAL: نمایش خصوصی نقش (فقط برای خود بازیکن قابل مشاهده)
+  =================================================================== -->
+  <div id="modal-role-reveal" class="modal-overlay hidden">
+    <div class="modal-card role-reveal-card" role="dialog" aria-modal="true">
+      <p class="role-reveal-eyebrow">نقش خصوصی شما</p>
+      <h2 id="role-reveal-name" class="role-reveal-name">—</h2>
+      <p id="role-reveal-team" class="role-reveal-team">—</p>
+      <p id="role-reveal-desc" class="role-reveal-desc">—</p>
+      <button id="btn-ack-role" class="btn btn-primary btn-block">متوجه شدم</button>
+    </div>
+  </div>
+
+  <!-- ==================================================================
+       MODAL: پایان بازی - نمایش برنده و نقش همه‌ی بازیکنان
+  =================================================================== -->
+  <div id="modal-game-over" class="modal-overlay hidden">
+    <div class="modal-card game-over-card" role="dialog" aria-modal="true">
+      <h2 id="game-over-winner" class="game-over-winner">—</h2>
+      <p id="game-over-reason" class="game-over-reason">—</p>
+      <table id="game-over-roles-table" class="roles-table">
+        <thead>
+          <tr>
+            <th>بازیکن</th>
+            <th>نقش</th>
+          </tr>
+        </thead>
+        <tbody id="game-over-roles-body"></tbody>
+      </table>
+      <div class="game-over-actions">
+        <button id="btn-play-again" class="btn btn-primary btn-block hidden">
+          دور جدید (هاست)
+        </button>
+        <button id="btn-leave-after-game" class="btn btn-ghost btn-block">
+          خروج از اتاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================================
+       تمپلیت مخفی برای رندر آیتم بازیکن (توسط client.js کلون می‌شود)
+  =================================================================== -->
+  <template id="tpl-player-item">
+    <li class="player-item">
+      <span class="player-status-dot"></span>
+      <span class="player-name"></span>
+      <span class="player-badges"></span>
+    </li>
+  </template>
+
+  <template id="tpl-target-button">
+    <button type="button" class="target-btn">
+      <span class="target-name"></span>
+    </button>
+  </template>
+
+  <template id="tpl-log-item">
+    <li class="log-item">
+      <span class="log-time"></span>
+      <span class="log-text"></span>
+    </li>
+  </template>
+
+  <!-- ==================================================================
+       فوتر سراسری - در تمام Viewها ثابت است (position: fixed در CSS)
+  =================================================================== -->
+  <footer class="app-footer">
+    <span>مافیا آنلاین</span>
+    <span class="app-footer-sep">·</span>
+    <span>نسخه‌ی ۰.۱ · ساخته‌شده با Node.js، Express و Socket.IO</span>
+  </footer>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js" defer></script>
+</body>
+</html>
+
